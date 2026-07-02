@@ -1,1 +1,27 @@
 @import 'tailwindcss';
+
+
+
+/* Vertical carousel animation and layout fixes */
+.animate-vertical-carousel { 
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    animation: 12s linear 1s infinite running vertical-carousel;
+    will-change: transform;
+}
+.animate-vertical-carousel img { 
+    display: block;
+    width: 100%;
+    height: auto;
+    flex: 0 0 auto;
+}
+@keyframes vertical-carousel {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        /* Move exactly one set of items */
+        transform: translateY(-50%);
+    } 
+}

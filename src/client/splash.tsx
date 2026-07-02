@@ -1,60 +1,63 @@
-import './index.css';
-
-import { navigateTo } from '@devvit/web/client';
 import { context, requestExpandedMode } from '@devvit/web/client';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import './index.css';
+
+
 export const Splash = () => {
   return (
-    <div className="flex relative flex-col justify-center items-center min-h-screen gap-4 bg-white dark:bg-gray-900">
-      <img
-        className="object-contain w-1/2 max-w-[250px] mx-auto"
-        src="/snoo.png"
-        alt="Snoo"
-      />
-      <div className="flex flex-col items-center gap-2">
-        <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
-          Hey {context.username ?? 'user'} 👋
-        </h1>
-        <p className="text-base text-center text-gray-600 dark:text-gray-300">
-          Edit{' '}
-          <span className="bg-[#e5ebee] dark:bg-gray-700 px-1 py-0.5 rounded">
-            src/client/splash.tsx
-          </span>{' '}
-          to get started.
-        </p>
+    <div className="min-h-screen px-7 py-3 bg-[url(/img/splash/boy-employee-landscape-8660661_1920.webp)]">
+      <div className="flex justify-between mb-2">
+        <div className="flex">
+          <img 
+            className="rounded-full w-12 h-12 mr-2 object-cover border-2 border-white shadow-lg dark:border-gray-700"
+            id="avatar"
+            src={ context.snoovatar ?? "/img/snoo.png" }
+            alt="Snoo"
+          />
+          <div className="flex flex-col justify-center text-white">
+            <div> {context.username ?? 'Guest'} </div>
+            <div> <span className="text-[#FFDD66]">--</span> Points </div>
+          </div>
+
+        </div>
+        <div>
+          <button className="flex hover:cursor-pointer">
+            <img className="w-10 h-10 m-auto" src="/img/trophy.svg"/>
+          </button>
+        </div>
       </div>
-      <div className="flex items-center justify-center mt-5">
-        <button
-          className="flex items-center justify-center bg-[#d93900] dark:bg-orange-600 text-white w-auto h-10 rounded-full cursor-pointer transition-colors px-4 hover:bg-[#c23300] dark:hover:bg-orange-700"
-          onClick={(e) => requestExpandedMode(e.nativeEvent, 'game')}
-        >
-          Tap to Start
-        </button>
+      <div className="min-w-full min-h-[82vh] max-h-[82vh] rounded-xl mt-5 bg-white p-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 h-full max-h-[75vh]">
+          <div className="col-span-2 flex flex-col justify-center space-y-6">
+            <div>
+              <h1 className="text-5xl font-mono font-semibold text-slate-900">COLOUR<br/>RELAX<br/>UPVOTE<br/>REPEAT.<br/></h1>
+            </div>
+            <button 
+              className="w-max px-6 py-3 bg-[#3A8CC7] text-white rounded-xl shadow hover:text-gray-300 hover:cursor-pointer transition"
+              onClick={e => {requestExpandedMode(e, "game")}}
+            >
+              GET COLOURING
+            </button>
+          </div>
+          <div className="relative overflow-hidden">
+            <div className="h-full overflow-hidden">
+              <div className="space-y-4 animate-vertical-carousel">
+                <img src="/img/splash/pikura-pixel-7272046_640.webp" alt="" className="w-[80%] rounded-3xl shadow-xl/20 border w border-white shadow-lg object-cover" />
+                <img src="/img/splash/lesiakower-sea-7306671_640.webp" alt="" className="w-[80%] rounded-3xl shadow-xl/20 border border-white shadow-lg object-cover" />
+                <img src="/img/splash/pikura-tv-8760955_640.webp" alt="" className="w-[80%] rounded-3xl shadow-xl/20 border border-white shadow-lg object-cover" />
+                <img src="/img/splash/edenmoon-minecraft-5974404_640.webp" alt="" className="w-[80%] shadow-xl/20 rounded-3xl border border-white shadow-lg object-cover" />
+                {/* Duplicates */}
+                <img src="/img/splash/pikura-pixel-7272046_640.webp" alt="" className="w-[80%] shadow-xl/20 rounded-3xl border w border-white shadow-lg object-cover" />
+                <img src="/img/splash/lesiakower-sea-7306671_640.webp" alt="" className="w-[80%] shadow-xl/20 rounded-3xl border border-white shadow-lg object-cover" />
+                <img src="/img/splash/pikura-tv-8760955_640.webp" alt="" className="w-[80%] shadow-xl/20 rounded-3xl border border-white shadow-lg object-cover" />
+                <img src="/img/splash/edenmoon-minecraft-5974404_640.webp" alt="" className="w-[80%] shadow-xl/20 rounded-3xl border border-white shadow-lg object-cover" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <footer className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 text-[0.8em] text-gray-600 dark:text-gray-400">
-        <button
-          className="cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
-          onClick={() => navigateTo('https://developers.reddit.com/docs')}
-        >
-          Docs
-        </button>
-        <span className="text-gray-300 dark:text-gray-600">|</span>
-        <button
-          className="cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
-          onClick={() => navigateTo('https://www.reddit.com/r/Devvit')}
-        >
-          r/Devvit
-        </button>
-        <span className="text-gray-300 dark:text-gray-600">|</span>
-        <button
-          className="cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
-          onClick={() => navigateTo('https://discord.com/invite/R7yu2wh9Qz')}
-        >
-          Discord
-        </button>
-      </footer>
     </div>
   );
 };
