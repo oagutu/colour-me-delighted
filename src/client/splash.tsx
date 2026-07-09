@@ -35,8 +35,8 @@ export const Splash = () => {
               <h1 className="text-5xl font-mono font-semibold text-slate-900">COLOUR<br/>RELAX<br/>UPVOTE<br/>REPEAT.<br/></h1>
             </div>
             <button 
-              className="w-max px-6 py-3 bg-[#3A8CC7] text-white rounded-xl shadow hover:text-gray-300 hover:cursor-pointer transition"
-              onClick={e => {requestExpandedMode(e, "game")}}
+              className="w-max px-6 py-3 bg-blue-theme text-white rounded-xl shadow hover:text-gray-300 hover:cursor-pointer transition"
+              onClick={e => {requestExpandedMode(e.nativeEvent, "game")}}
             >
               GET COLOURING
             </button>

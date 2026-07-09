@@ -1,6 +1,10 @@
 @import 'tailwindcss';
 
 
+@theme{
+    --color-blue-theme: #3A8CC7;
+}
+
 
 /* Vertical carousel animation and layout fixes */
 .animate-vertical-carousel { 

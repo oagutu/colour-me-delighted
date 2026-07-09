@@ -1,72 +1,85 @@
 import './index.css';
 
-import { StrictMode } from 'react';
+import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { navigateTo } from '@devvit/web/client';
-import { useCounter } from './hooks/useCounter';
+
+import { useDailyImage } from './hooks/useDailyImage';
+import { ClockActivityIcon, ShareIcon, UndoIcon } from './icons';
+
+const DEFAULT_PALETTE = ['#ff4d4d', '#ff9900', '#ffd500', '#6bf178', '#35b3ff', '#8a5cff', '#ff6ddb', '#4e4e4e'];
 
 export const App = () => {
-  const { count, username, loading, increment, decrement } = useCounter();
+
+  const [ palette, setPalette ] = useState<string[]>(DEFAULT_PALETTE);
+  const [ selectedColor, setSelectedColor ] = useState<string>();
+  const [ gridVisible, setGridVisible ] = useState(true);
+  const { dailyImage } = useDailyImage();
+
+  useEffect(() => {
+    if (dailyImage && dailyImage.palette) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPalette([...dailyImage.palette]);
+    }
+  }, [dailyImage])
+
   return (
-    <div className="flex relative flex-col justify-center items-center min-h-screen gap-4 bg-white dark:bg-gray-900">
-      <img
-        className="object-contain w-1/2 max-w-[250px] mx-auto"
-        src="/snoo.png"
-        alt="Snoo"
-      />
-      <div className="flex flex-col items-center gap-2">
-        <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-gray-100">
-          {username ? `Hey ${username} 👋` : ''}
-        </h1>
-        <p className="text-base text-center text-gray-600 dark:text-gray-300">
-          Edit{' '}
-          <span className="bg-[#e5ebee] dark:bg-gray-700 px-1 py-0.5 rounded">
-            src/client/game.tsx
-          </span>{' '}
-          to get started.
-        </p>
+    <div className="min-h-screen p-1 sm:p-3 bg-[url(/img/splash/boy-employee-landscape-8660661_1920.webp)]">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 h-full max-h-[99vh] sm:max-h-[96vh]">
+        <div className="h-full min-h-[63vh] col-span-2 flex flex-col justify-center space-y-3 rounded-xl bg-white dark:bg-gray-900">
+          <canvas className='rounded-xl'>
+
+          </canvas>
+        </div>
+        <div className="flex flex-col justify-between space-between h-full col-span-2 sm:col-span-1 rounded-xl px-3 py-5 bg-white dark:bg-gray-900">
+          <div className="flex content-center">
+            <button 
+              id="toggle-switch" 
+              type="button" 
+              role="switch" 
+              aria-checked={gridVisible} 
+              onClick={() => setGridVisible((current) => !current)}
+              className="group flex items-center w-14 h-8 p-1 mr-3  rounded-full bg-slate-400 transition-colors duration-200 ease-in-out overflow-hidden outline-none focus-visible:ring focus-visible:ring-purple-400 aria-checked:bg-blue-theme"
+            >
+              <span className="w-6 h-6 rounded-full bg-white transition-transform duration-200 ease-in-out group-aria-checked:translate-x-full"></span>
+            </button>
+            <label id="toggle-switch-label" htmlFor="toggle-switch" className="dark:text-slate-400">
+              {gridVisible ? 'Hide Grid' : 'Show Grid'}
+            </label>
+          </div>
+          <div className="flex flex-wrap mt-6 gap-3 sm:gap-2">
+            {palette.map((color) => (
+              <button
+                key={color}
+                type="button"
+                onClick={() => setSelectedColor(color)}
+                className={`h-7 w-7 rounded-xl transition ${selectedColor === color ? 'outline-1 outline-offset-1 outline-black dark:outline-white' : 'border-2 border-transparent'}`}
+                style={{ backgroundColor: color }}
+                aria-label={`Select color ${color}`}
+              />
+            ))}
+          </div>
+          <div className="grid grid-cols-6 gap-3 mt-3">
+            <div className="col-span-2 sm:col-span-3 text-blue-theme dark:text-slate-400">
+              <button className="flex items-center justify-center gap-3 w-full rounded-xl border-2 border-solid border-orange-300">
+                <UndoIcon />
+                <div className="text-xs">UNDO</div>
+              </button>
+            </div>
+            <div className="col-span-2 sm:col-span-3 text-blue-theme dark:text-slate-400">
+              <button className="flex items-center justify-center gap-3 w-full rounded-xl border-2 border-solid border-red-500">
+                <ClockActivityIcon />
+                <div className="textx-xs ">RESET</div>
+              </button>
+            </div>
+            <div className="col-span-2 sm:col-span-6 text-blue-theme dark:text-slate-400">
+              <button className="flex items-center justify-center gap-3 w-full rounded-xl border-2 border-solid border-green-500">
+                <ShareIcon />
+                <div className="text-xs ">SHARE</div>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="flex items-center justify-center mt-5">
-        <button
-          className="flex items-center justify-center bg-[#d93900] dark:bg-orange-600 text-white w-14 h-14 text-[2.5em] rounded-full cursor-pointer font-mono leading-none transition-colors hover:bg-[#c23300] dark:hover:bg-orange-700"
-          onClick={decrement}
-          disabled={loading}
-        >
-          -
-        </button>
-        <span className="text-[1.8em] font-medium mx-5 min-w-[50px] text-center leading-none text-gray-900 dark:text-white">
-          {loading ? '...' : count}
-        </span>
-        <button
-          className="flex items-center justify-center bg-[#d93900] dark:bg-orange-600 text-white w-14 h-14 text-[2.5em] rounded-full cursor-pointer font-mono leading-none transition-colors hover:bg-[#c23300] dark:hover:bg-orange-700"
-          onClick={increment}
-          disabled={loading}
-        >
-          +
-        </button>
-      </div>
-      <footer className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 text-[0.8em] text-gray-600 dark:text-gray-400">
-        <button
-          className="cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
-          onClick={() => navigateTo('https://developers.reddit.com/docs')}
-        >
-          Docs
-        </button>
-        <span className="text-gray-300 dark:text-gray-600">|</span>
-        <button
-          className="cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
-          onClick={() => navigateTo('https://www.reddit.com/r/Devvit')}
-        >
-          r/Devvit
-        </button>
-        <span className="text-gray-300 dark:text-gray-600">|</span>
-        <button
-          className="cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
-          onClick={() => navigateTo('https://discord.com/invite/R7yu2wh9Qz')}
-        >
-          Discord
-        </button>
-      </footer>
     </div>
   );
 };
