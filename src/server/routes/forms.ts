@@ -1,21 +1,17 @@
 import { Hono } from 'hono';
 import type { UiResponse } from '@devvit/web/shared';
 
-type ExampleFormValues = {
-  message?: string;
-};
+import type { DailyImageForm } from '../../shared/client';
 
 export const forms = new Hono();
 
-forms.post('/example-submit', async (c) => {
-  const { message } = await c.req.json<ExampleFormValues>();
-  const trimmedMessage = typeof message === 'string' ? message.trim() : '';
+forms.post('/daily-image-submit', async (c) => {
+  const data = await c.req.json<DailyImageForm>();
+  console.log('data: ', data);
 
   return c.json<UiResponse>(
     {
-      showToast: trimmedMessage
-        ? `Form says: ${trimmedMessage}`
-        : 'Form submitted with no message',
+      showToast: 'Form submitted with no message',
     },
     200
   );

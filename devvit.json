@@ -5,7 +5,6 @@
     "dir": "dist/client",
     "entrypoints": {
       "default": {
-        "inline": true,
         "entry": "splash.html"
       },
       "game": {
@@ -27,16 +26,19 @@
         "endpoint": "/internal/menu/post-create"
       },
       {
-        "label": "Example form",
-        "description": "Show a simple form",
+        "label": "Daily Image Upload form",
+        "description": "Daily image creation Form",
         "location": "subreddit",
         "forUserType": "moderator",
-        "endpoint": "/internal/menu/example-form"
+        "endpoint": "/internal/menu/daily-image-create"
       }
     ]
   },
+  "permissions": {
+    "media": true
+  },
   "forms": {
-    "exampleForm": "/internal/form/example-submit"
+    "dailyImageForm": "/internal/form/daily-image-submit"
   },
   "triggers": {
     "onAppInstall": "/internal/triggers/on-app-install"
