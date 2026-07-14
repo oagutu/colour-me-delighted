@@ -14,6 +14,8 @@ export const App = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const cursorSvgRef = useRef<string | null>(null);
   const dailyImageRef = useRef<HTMLImageElement | null>(null);
+  const initialImageRef = useRef<ImageData | null>(null);
+  const undoStackRef = useRef<ImageData[]>([]);
   const [ dailyImageReady, setDailyImageReady] = useState(false);
   const [ palette, setPalette ] = useState<string[]>(DEFAULT_PALETTE);
   const [ selectedColor, setSelectedColor ] = useState<string>();
@@ -45,6 +47,13 @@ export const App = () => {
       canvas.width = width;
       canvas.height = height;
       canvasContext.drawImage(dailyImageElem, 0, 0);
+      // store initial image snapshot and clear undo stack
+      try {
+        initialImageRef.current = canvasContext.getImageData(0, 0, width, height);
+      } catch {
+        initialImageRef.current = null;
+      }
+      undoStackRef.current = [];
       setDailyImageReady(true);
     }
 
@@ -95,7 +104,7 @@ export const App = () => {
     const observer = new ResizeObserver(updateGridSize);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [dailyImageReady]);
+  }, [dailyImageReady]);  
 
   const getGridCell = (x: number, y: number) => ({
     x: Math.floor(x / GRID_SIZE) * GRID_SIZE,
@@ -130,11 +139,17 @@ export const App = () => {
     const canvasContext = canvas.getContext('2d');
     if (!canvasContext) return;
 
-    if (isErasing) {
-      canvasContext.fillStyle = '#ffffff';
-    } else {
-      canvasContext.fillStyle = selectedColor ?? '#ffffff';
+    // push current state to undo stack
+    try {
+      const snapshot = canvasContext.getImageData(0, 0, canvas.width, canvas.height);
+      undoStackRef.current.push(snapshot);
+      // limit stack
+      if (undoStackRef.current.length > 100) undoStackRef.current.shift();
+    } catch (err) {
+      // getImageData may fail for cross-origin; ignore if so
     }
+
+    canvasContext.fillStyle = isErasing ? '#ffffff' : (selectedColor ?? '#ffffff');
     canvasContext.fillRect(cellX, cellY, GRID_SIZE, GRID_SIZE);
   };
 
@@ -157,6 +172,47 @@ export const App = () => {
   const onCanvasLeave = () => {
     setHoverCell(null);
   }
+
+  const undo = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const stack = undoStackRef.current;
+    if (!stack.length) return;
+    const prev = stack.pop()!; // last saved state
+    try {
+      ctx.putImageData(prev, 0, 0);
+    } catch {
+      console.error(`undo:e01:Failed to undo - {e}`);
+    }
+  };
+
+  const resetToInitial = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const init = initialImageRef.current;
+    if (!init) return;
+    try {
+      ctx.putImageData(init, 0, 0);
+      undoStackRef.current = [];
+    } catch (e) {
+      console.error(`resetToInitial:e01:Failed to reset to intial state - {e}`);
+    }
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        undo();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
     <div className="min-h-screen p-1 sm:p-3 bg-[url(/img/splash/boy-employee-landscape-8660661_1920.webp)]">
@@ -237,13 +293,13 @@ export const App = () => {
           </div>
           <div className="grid grid-cols-6 gap-3 mt-3">
             <div className="col-span-2 sm:col-span-3 text-black dark:text-slate-400">
-              <button className="flex items-center justify-center py-1 gap-3 w-full hover:cursor-pointer rounded-xl border border-solid border-orange-300">
+              <button onClick={undo} className="flex items-center justify-center py-1 gap-3 w-full hover:cursor-pointer rounded-xl border border-solid border-orange-300">
                 <UndoIcon />
                 <div className="text-xs">UNDO</div>
               </button>
             </div>
             <div className="col-span-2 sm:col-span-3 text-black dark:text-slate-400">
-              <button className="flex items-center justify-center py-1 gap-3 w-full hover:cursor-pointer rounded-xl border border-solid border-red-500">
+              <button onClick={resetToInitial} className="flex items-center justify-center py-1 gap-3 w-full hover:cursor-pointer rounded-xl border border-solid border-red-500">
                 <ClockActivityIcon />
                 <div className="text-xs ">RESET</div>
               </button>
