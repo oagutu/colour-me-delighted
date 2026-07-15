@@ -35,7 +35,11 @@
     ]
   },
   "permissions": {
-    "media": true
+    "reddit": {
+      "asUser": ["SUBMIT_COMMENT"]
+    },
+    "media": true,
+    "redis": true
   },
   "forms": {
     "dailyImageForm": "/internal/form/daily-image-submit"

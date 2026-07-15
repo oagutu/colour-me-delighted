@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
-import { context, redis, reddit } from '@devvit/web/server';
+import { context, redis, reddit, media, RichTextBuilder } from '@devvit/web/server';
 import type {
+  CommentResponse,
   DecrementResponse,
   IncrementResponse,
   InitResponse,
@@ -12,6 +13,44 @@ type ErrorResponse = {
 };
 
 export const api = new Hono();
+
+api.post('/share', async (c) => {
+  const { image, commentText } = await c.req.json();
+
+  const uploaded = await media.upload({
+    url: image,
+    type: 'image',
+  });
+
+  const commentRichtext = new RichTextBuilder()
+    .paragraph((p) => {
+      p.text({ text: commentText ?? 'Check out my result!' });
+    })
+    .paragraph((p) => {
+      p.image({ mediaUrl: uploaded.mediaUrl });
+    });
+
+  // Submit the comment under the current post
+  const comment = await reddit.submitComment({
+    id: context.postId!,
+    richtext: commentRichtext,
+    runAs: 'USER',
+  });
+
+  // add user to users record: username, points
+  const username = await reddit.getCurrentUsername();
+  let points = 0;
+  if (username) {
+    if (await !redis.exists("user_points")) {
+      points = 1
+      await redis.hSet("user_points", {username: "1"});
+    } else {
+      points = await redis.hIncrBy("user_points", username, 1);
+    }
+  }
+
+  return c.json<CommentResponse>({ id: comment.id, url: comment.url, userPoints: points, success: true });
+});
 
 api.get('/init', async (c) => {
   const { postId } = context;

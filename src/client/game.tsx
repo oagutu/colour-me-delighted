@@ -5,6 +5,8 @@ import { createRoot } from 'react-dom/client';
 
 import { useDailyImage } from './hooks/useDailyImage';
 import { ClockActivityIcon, ShareIcon, UndoIcon } from './icons';
+import { CommentResponse } from '../shared/api';
+import { FormEffectResponse, navigateTo, showForm } from '@devvit/web/client';
 
 const DEFAULT_PALETTE = ['#ff4d4d', '#ff9900', '#ffd500', '#6bf178', '#35b3ff', '#8a5cff', '#ff6ddb', '#4e4e4e'];
 const GRID_SIZE = 32;
@@ -22,6 +24,8 @@ export const App = () => {
   const [ cursorUrl, setCursorUrl ] = useState<string>('auto');
   const [ showGridLines, setShowGridLines ] = useState(true);
   const [ isErasing, setIsErasing ] = useState<boolean>(false);
+  const [ isSharing, setIsSharing ] = useState<boolean>(false);
+  const [ colorChangeCount, setColorChangeCount ] = useState<number>(0);
   const [ gridDisplaySize, setGridDisplaySize ] = useState<{ width: number; height: number } | null>(null);
   const [ hoverCell, setHoverCell ] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const { dailyImage } = useDailyImage();
@@ -36,7 +40,6 @@ export const App = () => {
     if (!dailyImage?.imageUrl) return;
     const dailyImageElem: HTMLImageElement = new Image();
     dailyImageElem.crossOrigin = "anonymous";
-    dailyImageElem.src = dailyImage?.imageUrl;
     dailyImageElem.onload = () => {
       dailyImageRef.current = dailyImageElem;
       const canvas = canvasRef.current;
@@ -54,8 +57,13 @@ export const App = () => {
         initialImageRef.current = null;
       }
       undoStackRef.current = [];
+      setColorChangeCount(0);
       setDailyImageReady(true);
-    }
+    };
+    dailyImageElem.onerror = () => {
+      setDailyImageReady(true);
+    };
+    dailyImageElem.src = dailyImage.imageUrl;
 
   }, [dailyImage])
 
@@ -151,6 +159,39 @@ export const App = () => {
 
     canvasContext.fillStyle = isErasing ? '#ffffff' : (selectedColor ?? '#ffffff');
     canvasContext.fillRect(cellX, cellY, GRID_SIZE, GRID_SIZE);
+    setColorChangeCount((prev) => prev + (isErasing ? -1 : 1));
+  };
+
+  const handleGetShareComment = async () => {
+    setIsSharing(true);
+    const result: FormEffectResponse<{comment?: string;} & {[key: string]: string;}> = await showForm({
+        fields: [
+          {
+            type: 'paragraph',
+            name: 'comment',
+            label: 'Comment to be Posted with your art!',
+          },
+        ],
+      },
+    );
+    const comment = result && 'values' in result ? result?.values?.comment : null;
+    await share(comment)
+  }
+
+  const share = async (commentText?: string | null) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const dataUrl = canvas.toDataURL('image/png');
+    const response = await fetch('/api/share', {
+      method: 'POST',
+      body: JSON.stringify({ image: dataUrl, commentText: commentText }),
+    });
+    const resObj = await response.json() as CommentResponse;
+    if (resObj?.url) {
+      navigateTo(resObj.url);
+    }
+    setIsSharing(false);
   };
 
   const onCanvasHover = (e: MouseEvent<HTMLCanvasElement>) => {
@@ -183,6 +224,7 @@ export const App = () => {
     const prev = stack.pop()!; // last saved state
     try {
       ctx.putImageData(prev, 0, 0);
+      setColorChangeCount((prevCount) => Math.max(0, prevCount - 1));
     } catch {
       console.error(`undo:e01:Failed to undo - {e}`);
     }
@@ -198,6 +240,7 @@ export const App = () => {
     try {
       ctx.putImageData(init, 0, 0);
       undoStackRef.current = [];
+      setColorChangeCount(0);
     } catch (e) {
       console.error(`resetToInitial:e01:Failed to reset to intial state - {e}`);
     }
@@ -253,18 +296,18 @@ export const App = () => {
           )}
         </div>
         <div className="flex flex-col justify-between space-between h-full col-span-2 sm:col-span-1 rounded-xl px-3 py-5 bg-white dark:bg-gray-900">
-          <div className="flex content-center">
+          <div className="flex items-center">
             <button 
               id="toggle-switch" 
               type="button" 
               role="switch" 
               aria-checked={showGridLines} 
               onClick={() => setShowGridLines((prev) => !prev)}
-              className="group flex items-center w-14 h-8 p-1 mr-3 rounded-full bg-slate-400 transition-colors duration-200 ease-in-out overflow-hidden outline-none focus-visible:ring focus-visible:ring-purple-400 aria-checked:bg-blue-theme"
+              className="group flex items-center w-12 h-6 p-1 mr-3 rounded-full bg-slate-400 transition-colors duration-200 ease-in-out overflow-hidden outline-none focus-visible:ring focus-visible:ring-purple-400 aria-checked:bg-blue-theme"
             >
-              <span className="w-6 h-6 rounded-full bg-white transition-transform duration-200 ease-in-out group-aria-checked:translate-x-full"></span>
+              <span className="w-5 h-5 rounded-full bg-white transition-transform duration-200 ease-in-out group-aria-checked:translate-x-full"></span>
             </button>
-            <label id="toggle-switch-label" htmlFor="toggle-switch" className="dark:text-slate-400">
+            <label id="toggle-switch-label" htmlFor="toggle-switch" className="text-xs dark:text-slate-400">
               {showGridLines ? 'Hide Grid' : 'Show Grid'}
             </label>
           </div>
@@ -278,7 +321,7 @@ export const App = () => {
               style={{ backgroundColor: '#ffffff', cursor: cursorUrl }}
               aria-label="Erase"
             >
-              <span className="text-xs font-bold text-gray-600 dark:text-gray-800"><img src="/img/cursors/eraser.svg" alt="eraser icon" /></span>
+              <img src="/img/cursors/eraser.svg" alt="eraser icon" className="h-full w-full object-contain" />
             </button>
             {palette.map((color) => (
               <button
@@ -293,21 +336,32 @@ export const App = () => {
           </div>
           <div className="grid grid-cols-6 gap-3 mt-3">
             <div className="col-span-2 sm:col-span-3 text-black dark:text-slate-400">
-              <button onClick={undo} className="flex items-center justify-center py-1 gap-3 w-full hover:cursor-pointer rounded-xl border border-solid border-orange-300">
+              <button onClick={undo} className="flex items-center justify-center py-1 gap-3 w-full hover:cursor-pointer rounded-xl border-2 border-solid border-orange-300">
                 <UndoIcon />
                 <div className="text-xs">UNDO</div>
               </button>
             </div>
             <div className="col-span-2 sm:col-span-3 text-black dark:text-slate-400">
-              <button onClick={resetToInitial} className="flex items-center justify-center py-1 gap-3 w-full hover:cursor-pointer rounded-xl border border-solid border-red-500">
+              <button onClick={resetToInitial} className="flex items-center justify-center py-1 gap-3 w-full hover:cursor-pointer rounded-xl border-2 border-solid border-red-500">
                 <ClockActivityIcon />
                 <div className="text-xs ">RESET</div>
               </button>
             </div>
             <div className="col-span-2 sm:col-span-6 text-black dark:text-slate-400">
-              <button className="flex items-center justify-center py-1 gap-3 w-full hover:cursor-pointer rounded-xl border border-solid border-green-500">
-                <ShareIcon />
-                <div className="text-xs ">SHARE</div>
+              <button 
+                onClick={handleGetShareComment}
+                disabled={isSharing || colorChangeCount < 5}
+                title={colorChangeCount < 5 ? 'Make at least 5 color changes before sharing' : undefined}
+                className="flex items-center justify-center py-1 gap-3 w-full rounded-xl border-2 border-solid border-green-500 transition disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSharing ? (
+                  <img src="/img/bars.svg" alt="Loading" className="h-4 w-4 my-1 dark:text-white" />
+                ) : (
+                  <>
+                    <ShareIcon />
+                    <div className="text-xs">SHARE</div>
+                  </>
+                )}
               </button>
             </div>
           </div>
