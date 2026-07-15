@@ -21,18 +21,20 @@ menu.post('/daily-image-create', async (c) => {
           },
           {
             type: 'string',
-            name: 'challengDate',
+            name: 'challengeDate',
             label: 'Enter Challenge date',
             required: false,
+            helpText: 'Use format DD/MM/YYYY'
           },
           {
             type: 'paragraph',
             name: 'palette',
             label: 'Enter Comma Separated Color Palette',
             required: false,
+            helpText: 'Eg. #FFa5839a, #FFbd6e56, #FF8e4e4e, #FF6c4453'
           },
           {
-            type: 'paragraph',
+            type: 'string',
             name: 'challengeDescription',
             label: 'Enter Coloring Challenge/Constraint Description',
             required: false,

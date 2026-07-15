@@ -1,8 +1,8 @@
 export type DailyImageForm = {
   imageUrl: string;
-  palette?: string;
-  date?: string;
-  challengeDescription?: string;
+  palette?: string | null;
+  challengeDate?: string | null;
+  challengeDescription?: string | null;
 };
 
 export type ImageContainer = {
