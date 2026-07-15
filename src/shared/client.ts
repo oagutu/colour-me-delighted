@@ -10,4 +10,3 @@ export type ImageContainer = {
   palette?: string[];
   challengeDescription?: string | null;
 };
-

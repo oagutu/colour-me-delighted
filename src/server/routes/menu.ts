@@ -56,8 +56,7 @@ menu.post('/post-create', async (c) => {
 
     return c.json<UiResponse>(
       {
-        // navigateTo: `https://reddit.com/r/${context.subredditName}/comments/${post.id}`,
-        navigateTo: `https://reddit.com/r/${context.subredditName}`,
+        navigateTo: `https://reddit.com/r/${context.subredditName}/comments/${post.id}`,
 
       },
       200
