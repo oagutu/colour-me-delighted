@@ -7,7 +7,7 @@ export type DailyImageForm = {
 
 export type ImageContainer = {
   imageUrl: string;
-  imageRegionsUrl: string;
   palette?: string[];
+  challengeDescription?: string | null;
 };
 

@@ -1,11 +1,12 @@
 import { Hono } from 'hono';
-import { context, redis, reddit, media, RichTextBuilder } from '@devvit/web/server';
+import { context, redis, reddit, media, RichTextBuilder, Post } from '@devvit/web/server';
 import type {
   CommentResponse,
   DecrementResponse,
   IncrementResponse,
   InitResponse,
 } from '../../shared/api';
+import { DailyImageForm, ImageContainer } from '../../shared/client';
 
 type ErrorResponse = {
   status: 'error';
@@ -50,6 +51,35 @@ api.post('/share', async (c) => {
   }
 
   return c.json<CommentResponse>({ id: comment.id, url: comment.url, userPoints: points, success: true });
+});
+
+api.get('/daily-image', async (c) => {
+  const { postId } = context;
+  
+  if (!postId) {
+    console.error('API Init Error: postId not found in devvit context');
+    return c.json<ErrorResponse>(
+      {
+        status: 'error',
+        message: 'postId is required but missing from context',
+      },
+      400
+    );
+  }
+
+  const dailyImageStr = await redis.hGet("posts", postId);
+
+  let dailyImage: DailyImageForm = {
+    imageUrl: "https://i.redd.it/fs6v8on430dh1.png",
+  }
+  if (dailyImageStr) {
+    dailyImage = await JSON.parse(dailyImageStr);
+  }
+  return c.json<ImageContainer>({
+    imageUrl: dailyImage.imageUrl,
+    palette: dailyImage.palette?.split(","),
+    challengeDescription: dailyImage.challengeDescription
+  });
 });
 
 api.get('/init', async (c) => {
